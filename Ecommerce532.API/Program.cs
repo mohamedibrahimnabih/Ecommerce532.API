@@ -1,10 +1,16 @@
 
 using ECommerce532.API.DataAccess;
 using ECommerce532.API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using System.Globalization;
+using System.Text;
 
 namespace Ecommerce532.API;
 
@@ -19,6 +25,25 @@ public class Program
         builder.Services.AddControllers();
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
+
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    ClockSkew = TimeSpan.Zero,
+                    ValidIssuer = $"{builder.Configuration["jwt:issuer"]}",
+                    ValidAudience = $"{builder.Configuration["jwt:audience"]}",
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes($"{builder.Configuration["jwt:signingCredentials"]}"))
+                };
+            });
+
+        builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
         builder.Services.AddScoped<IRepository<Category>, Repository<Category>>();
         builder.Services.AddScoped<IRepository<Brand>, Repository<Brand>>();
@@ -57,7 +82,24 @@ public class Program
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
 
+        const string defaultCulture = "en";
+
+        var supportedCultures = new[]
+        {
+            new CultureInfo(defaultCulture),
+            new CultureInfo("ar"),
+            new CultureInfo("fr"),
+        };
+
+        builder.Services.Configure<RequestLocalizationOptions>(options => {
+            options.DefaultRequestCulture = new RequestCulture(defaultCulture);
+            options.SupportedCultures = supportedCultures;
+            options.SupportedUICultures = supportedCultures;
+        });
+
         var app = builder.Build();
+
+        app.UseStaticFiles();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -68,7 +110,10 @@ public class Program
 
         app.UseHttpsRedirection();
 
+        app.UseAuthentication();
         app.UseAuthorization();
+
+        app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 
         app.MapControllers();
 

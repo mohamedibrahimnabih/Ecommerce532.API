@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Localization;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using LoginRequest = ECommerce532.API.DTOs.Requests.LoginRequest;
 using RegisterRequest = ECommerce532.API.DTOs.Requests.RegisterRequest;
@@ -21,16 +25,22 @@ public class AccountController : ControllerBase
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IEmailSender _emailSender;
     private readonly IRepository<ApplicationUserOTP> _applicationUserOTPRepository;
+    private readonly IConfiguration _configuration;
+    private readonly IStringLocalizer<Localization> _localizer;
 
     public AccountController(UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IEmailSender emailSender,
-        IRepository<ApplicationUserOTP> applicationUserOTPRepository)
+        IRepository<ApplicationUserOTP> applicationUserOTPRepository,
+        IConfiguration configuration,
+        IStringLocalizer<Localization> localizer)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _emailSender = emailSender;
         _applicationUserOTPRepository = applicationUserOTPRepository;
+        _configuration = configuration;
+        _localizer = localizer;
     }
 
     [HttpPost] // Data: JSON => Binding: object
@@ -96,7 +106,7 @@ public class AccountController : ControllerBase
 
         await _userManager.AddToRoleAsync(user, RoleConstants.CUSTOMER);
 
-        var SUCCESS_NOTIFICATION = "Create Account Successfully, please verify your account";
+        var SUCCESS_NOTIFICATION = _localizer["CreateNewAccount_Success_Notification"].Value;
 
         //return Ok(new SuccessResponse
         //{
@@ -158,6 +168,30 @@ public class AccountController : ControllerBase
 
         var signInResult = await _signInManager.PasswordSignInAsync(user, loginRequest.Password, loginRequest.Remember, lockoutOnFailure: true);
 
+        var roles = await _userManager.GetRolesAsync(user);
+
+        var claims = new List<Claim>
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+            new Claim(ClaimTypes.Name, user.UserName!),
+            new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss")),
+        };
+
+        foreach (var item in roles)
+            claims.Add(new(ClaimTypes.Role, item));
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes($"{_configuration["jwt:signingCredentials"]}"));
+        var signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        // using jwt token
+        var token = new JwtSecurityToken(
+                issuer: $"{_configuration["jwt:issuer"]}",
+                audience: $"{_configuration["jwt:audience"]}",
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(180),
+                signingCredentials: signingCredentials
+            );
+
         if (signInResult.IsLockedOut)
         {
             return BadRequest(new ErrorResponse
@@ -191,6 +225,7 @@ public class AccountController : ControllerBase
 
         return Created($"{Request.Scheme}://{Request.Host}/customer/home", new SuccessResponse
         {
+            Data = [new JwtSecurityTokenHandler().WriteToken(token)],
             SuccessNotification = SUCCESS_NOTIFICATION
         });
     }

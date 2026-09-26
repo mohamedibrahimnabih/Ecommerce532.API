@@ -26,7 +26,7 @@ public class DbInitializer : IDbInitializer
             _context.Database.Migrate();
 
         // seed roles
-        if(_roleManager.Roles.IsNullOrEmpty())
+        if(_roleManager.Roles is not null)
         {
             _roleManager.CreateAsync(new(RoleConstants.SUPER_ADMIN)).GetAwaiter().GetResult();
             _roleManager.CreateAsync(new(RoleConstants.ADMIN)).GetAwaiter().GetResult();
