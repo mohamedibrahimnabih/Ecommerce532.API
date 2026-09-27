@@ -120,4 +120,10 @@
   <data name="CreateNewAccount_Success_Notification" xml:space="preserve">
     <value>Create Account Successfully, please verify your account</value>
   </data>
+  <data name="CreateNewReview" xml:space="preserve">
+    <value>Add Review Successfully</value>
+  </data>
+  <data name="FailedInCreateNewReview" xml:space="preserve">
+    <value>Failed in Create New Review</value>
+  </data>
 </root>

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Ecommerce532.API.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce532.API.DataAccess;
@@ -20,6 +21,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Promotion> Promotions { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<UserProductReview> UserProductReviews { get; set; }
+    public DbSet<ReviewImg> ReviewImgs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

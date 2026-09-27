@@ -1,4 +1,5 @@
 
+using Ecommerce532.API.Models;
 using ECommerce532.API.DataAccess;
 using ECommerce532.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,8 +10,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Stripe;
 using System.Globalization;
 using System.Text;
+using Product = ECommerce532.API.Models.Product;
 
 namespace Ecommerce532.API;
 
@@ -55,6 +58,8 @@ public class Program
         builder.Services.AddScoped<IRepository<Promotion>, Repository<Promotion>>();
         builder.Services.AddScoped<IRepository<Order>, Repository<Order>>();
         builder.Services.AddScoped<IRepository<OrderItem>, Repository<OrderItem>>();
+        builder.Services.AddScoped<IRepository<UserProductReview>, Repository<UserProductReview>>();
+        builder.Services.AddScoped<IRepository<ReviewImg>, Repository<ReviewImg>>();
 
         builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 
@@ -96,6 +101,10 @@ public class Program
             options.SupportedCultures = supportedCultures;
             options.SupportedUICultures = supportedCultures;
         });
+
+        StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+
+        builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
 
         var app = builder.Build();
 

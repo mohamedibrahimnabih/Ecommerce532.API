@@ -14,6 +14,9 @@ public class Product
     public double Rate { get; set; }
     public int CategoryId { get; set; }
     public int BrandId { get; set; }
+    public string? CreatedById { get; set; }
+    public ApplicationUser? CreatedBy { get; set; }
     public Category Category { get; set; } = null!;
     public Brand Brand { get; set; } = null!;
 }
+

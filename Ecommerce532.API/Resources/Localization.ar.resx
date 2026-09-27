@@ -120,4 +120,10 @@
   <data name="CreateNewAccount_Success_Notification" xml:space="preserve">
     <value>تم انشاء الحساب بنجاح، يرجى تأكيده</value>
   </data>
+  <data name="CreateNewReview" xml:space="preserve">
+    <value>تم انشاء التقييم بنجاح</value>
+  </data>
+  <data name="FailedInCreateNewReview" xml:space="preserve">
+    <value>فشل عمليه اضافه التعليق، برجاء التأكد من شراء المنتج</value>
+  </data>
 </root>
