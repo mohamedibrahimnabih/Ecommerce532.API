@@ -1,5 +1,6 @@
 
 using Ecommerce532.API.Models;
+using Ecommerce532.API.Services;
 using ECommerce532.API.DataAccess;
 using ECommerce532.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,6 +23,18 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+                              {
+                                  policy.WithOrigins("http://127.0.0.1:5500", 
+                                      "http://localhost:5500")
+                                      .AllowAnyHeader()
+                                      .AllowAnyMethod()
+                                      .AllowCredentials();
+                              });
+        });
 
         // Add services to the container.
 
@@ -60,8 +73,11 @@ public class Program
         builder.Services.AddScoped<IRepository<OrderItem>, Repository<OrderItem>>();
         builder.Services.AddScoped<IRepository<UserProductReview>, Repository<UserProductReview>>();
         builder.Services.AddScoped<IRepository<ReviewImg>, Repository<ReviewImg>>();
+        //builder.Services.AddScoped<IRepository<Message>, Repository<Message>>();
 
         builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+
+        builder.Services.AddSignalR();
 
         var connectionString =
                         builder.Configuration.GetConnectionString("DefaultConnection")
@@ -119,6 +135,8 @@ public class Program
 
         app.UseHttpsRedirection();
 
+        app.UseCors();
+
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -131,6 +149,8 @@ public class Program
             var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
             dbInitializer.Initialize(); // Runs migrations and seeds data
         }
+
+        app.MapHub<ChatHub>("/chatHub");
 
         app.Run();
     }
